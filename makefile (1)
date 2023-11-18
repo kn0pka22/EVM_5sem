@@ -1,0 +1,11 @@
+OPT = -O3
+proga: matr_main.o matr.o
+	g++  matr_main.o matr.o -o proga
+matr_main.o: matr_main.cpp matr.hpp
+	g++ -c $(OPT) matr_main.cpp -c
+matr.o: matr.cpp matr.hpp
+	g++ -c $(OPT) matr.cpp -c
+clean:
+	rm -f *.o proga
+
+
