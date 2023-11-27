@@ -1,0 +1,9 @@
+OPT = -O3
+proga: main.o func.o
+	g++  main.o func.o -o proga
+main.o: main.cpp func.hpp
+	g++ -c $(OPT) main.cpp -c
+func.o: func.cpp func.hpp
+	g++ -c $(OPT) func.cpp -c
+clean:
+	rm -f *.o proga
