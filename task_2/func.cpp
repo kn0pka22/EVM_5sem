@@ -111,40 +111,53 @@ int input_matr(int n,double* arr, int k,const char* fname){
 	return 1;
 }
 
-int SymMatr(double* a, int n){
+int sym_matr(double* a, int n){
 	double norm = matrix_norm(n, a);
 	for(int i = 0; i < n; ++i)
 	{
 		for(int j = i; j < n; ++j)
 		{
-			if(std::abs(a[i * n + j] - a[j * n + i]) > norm*1e-15) {std::cout<<"Info:   the matrix is not symmetrical!\n"; return -1; }
+			if(std::abs(a[i * n + j] - a[j * n + i]) > norm*1e-15) { return -1; }
 		}
 	}
 	return 1;
 }
 
-int to_tridiag_form(double* a, double* y,double* x_k, double* z,double* matrB,int n){ //досчитать!*************
+int to_tridiag_form(double* a, double* y,double* x_k, double* z,int n){ 
     double s;
     double norm_a,norm_x,norm;
     double alpha=0.0;
-    
-    //std::cout<<"MatrB: \n\n"; print_matrix_spv(matrB,n,n, n);
+	double mat_norm=matrix_norm(n,a);
+	
+
     for(int i=0;i<n-2;++i){
-        //std::cout<<"ITERATION "<<i<<std::endl;
+	
 		s=0.0;
 		for (int j=i+2;j<n;++j){
 			s+=(a[i*n+j]*a[i*n+j]);
 		}
-        //std::cout<<"SUM! = "<<s<<std::endl;
 		norm_a=sqrt(s+(a[i*n+i+1]*a[i*n+i+1]));
-        //std::cout<<"norm_a = "<<norm_a<<std::endl;
+
         //-----------x_k----------
-		x_k[i+1]=a[i*n+i+1]-norm_a;      
-        //std::cout<<"x_k[i+1] = "<<x_k[i+1]<<std::endl;  
+		if (s<1e-15*mat_norm){                                        //подумать тут ещё 
+			a[i * n + (i + 1)] = norm_a;
+	    	a[(i + 1) * n + i] = norm_a;
+
+			for(int k = i + 2; k < n; k++) {
+		    	a[i * n + k] = 0.0;
+		    	a[k* n + i] = 0.0;
+	    	}
+			continue;
+		}
+
+		x_k[i+1]=a[i*n+i+1]-norm_a;  
 		norm_x=sqrt(x_k[i+1]*x_k[i+1]+s);
-	    if (norm_x< /*mat_norm * */ 1e-15){	a[i*n+i+1]=norm_a;  continue; }       //подумать тут ещё 
+		if (norm_x<1e-15*mat_norm){ 
+			continue;
+		}		
 		norm=1.0/norm_x;
 		x_k[i+1]*=norm;
+
         //std::cout<<"x = (";
         //std::cout<<x_k[i+1]<<" ";
 		for (int j=i+2;j<n;++j){
@@ -159,18 +172,17 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,double* matrB,in
             y[k]=0.0;
             for (int j=i+1;j<n;++j){
                 y[k]+=a[j*n+k]*x_k[j];
-                //std::cout<<"y["<<k<<"]+=a["<<j*n+k<<"]*x_k["<<j<<"] = "<<y[k]<<" += "<<a[j*n+k]<<"*"<<x_k[j]<<std::endl;
             }
             //std::cout<<y[k]<<" ";
         }
         //std::cout<<")\n";
         
         //-----alpha = 2(x,y)-----
+		alpha=0.0;
         for (int k=i+1;k<n;++k){
             alpha+=x_k[k]*y[k];
         }
         alpha*=2.0;
-        //std::cout<<"ALPHA = "<<alpha<<std::endl;
         
         //-----z = 2y-alpha*x-----
         //std::cout<<"z = (";
@@ -181,36 +193,30 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,double* matrB,in
         //std::cout<<")\n";
 
         //---matrB = A-zx*-xz*----
-        
-        //matrB[i*n+i]=a[i*n+i];
-        
-        matrB[i * n + (i + 1)] = norm_a;
-	    matrB[(i + 1) * n + i] = norm_a;
-
-	    for(int k = i + 2; k < n; k++) {
-		    matrB[i * n + k] = 0.0;
-		    matrB[k* n + i] = 0.0;
-	    }
-        
-
-
-        //std::cout<<"MatrB: \n\n"; print_matrix_spv(matrB,n,n, n);
-        //std::cout<<"MatrB: \n\n "; print_matrix_spv(matrB,n,n, n);
 
         for (int k=i+1;k<n;++k){
             for (int j=i+1;j<n;++j){
-                //std::cout<<matrB[k*n+j]<<" -= "<<z[k]<<" * "<<x_k[j]<<"+"<<x_k[k]<<"*"<<z[j]<<std::endl;
-                matrB[k*n+j]-=(z[k]*x_k[j]+x_k[k]*z[j]);   
+                a[j*n+k]-=z[k]*x_k[j]+x_k[k]*z[j];   
             }
         }
-        std::cout<<"MatrB: \n\n"; print_matrix_spv(matrB,n,n, n);
+
+		a[i * n + (i + 1)] = norm_a;
+	    a[(i + 1) * n + i] = norm_a;
+
+	    for(int k = i + 2; k < n; k++) {
+		    a[i * n + k] = 0.0;
+		    a[k* n + i] = 0.0;
+	    }
+        //std::cout<<"MatrB: \n\n"; print_matrix_spv(a,n,n, n);
 
     }
+	if (std::abs(a[(n-1)*n+n-2])<1e-15*mat_norm) a[(n-1)*n+n-2] = 0.0;   
+	if (std::abs(a[(n-2)*n+n-1])<1e-15*mat_norm) a[(n-2)*n+n-1] = 0.0;             
     return 0;
 
 }
 
-double SearchEps(){
+double search_m_eps(){
 	double eps=1;
 	while (1+eps/2>1){
 		eps=eps/2.0;
@@ -219,122 +225,134 @@ double SearchEps(){
 	return eps;
 }
 
-int n_(double * matr, double lmbd, int n){
-	int cnt = 0;
-    double a,b;
-    double gamma,alpha;
-    double u,v;
-    double x,y;
-	double m_a = -1, m_b = -1;
-    double m_eps=SearchEps();
-    lmbd=0.0;// точно нужно здесь?, потом уберу мб..
+int sign_changes(double* a,int n,double lmbd){
+	int m=0;
+	double alpha;
+	double max_a=-128, max_b=-128;
+	int tmp;
+	double tmp2,tmp3;
+	double x,y,u,v,g;
+	double m_eps=search_m_eps();
+	double a1,b1;
 
 
-    //------------------alpha=4max{max(|a_i|),max(|b_i|)}-------------
-	for (int i = 0; i < n; ++i){
-		if (std::abs(matr[i * n + i]-lmbd) > m_a) 
-			m_a = std::abs(matr[i * n + i] - lmbd);
+	//---------------alpha=4*max{ max{|a_i|}, max{|b_i|} }----------------
+	for (int i=0;i<n-1;++i){
+		tmp=i*n+i;
+		tmp2=std::abs(a[tmp]-lmbd);
+		tmp3=std::abs(a[tmp+1]);
+		if (tmp3<m_eps) a[tmp+1]=0.0;
+		if (tmp2>max_a) max_a=tmp2;
+		if (tmp3>max_b) max_b=tmp3; 
 	}
-    for (int i = 0; i < n-1; i ++){
-		if (std::abs(matr[i * n + i+1]-lmbd) > m_b) 
-			m_b = std::abs(matr[i * n + i+1] - lmbd);
-    }
-	alpha=(m_a>m_b)?m_a:m_b;
-	alpha*=4.0; 
-        
+	//(n-2)*n+(n-2)=n*n-2n+n-2=n*n-n-2
+	//(n-1)*n+(n-1)=n*n-n+n-1=n*n-1=n*n-n-2+n+1
+	if (std::abs(a[tmp+n+1]-lmbd)>max_a) max_a=std::abs(a[tmp]-lmbd);
 
-	if(alpha > 0)
-		alpha = 1.0 / alpha;
-	else{
-		std::cout << "is it possible?" << std::endl;
-		return -1;
-	}
+	alpha = (max_a>max_b)?max_a:max_b;
+	alpha*=4.0;
+	double aalpha=1.0/alpha;
+
+	//for (int i=0;i<n*n;++i) a[i]*=aalpha;
+
+	x=aalpha*(a[0]-lmbd);
+	y=1.0;
+	if (x<0) m++;
+
+	double m_eeps=1/m_eps;
+	double ma,mma;
+
+	for (int k=1;k<n;++k){
+		
+		tmp=k*n+k;
+		a1=aalpha*(a[tmp]-lmbd);
+		b1=aalpha*(a[tmp-1]);
 	
-    matr[0]*=alpha;
-    matr[1]*=alpha;
-    for (int i=1;i<n-1;++i){
-        for (int j=-1;j<2;++j){
-            matr[i*n+j+i]*=alpha;
-        }
-        if (std::abs(matr[i*n+i+1])<1e-16){
-            matr[i*n+i+1]=0.0;
-            matr[(i+1)*n+i]=0.0;
-        } 
-    }
-    matr[(n-1)*n+n-2]*=alpha;
-    matr[(n-1)*n+n-1]*=alpha;
-    std::cout<<"MatrBBBBBB: \n\n"; print_matrix_spv(matr,n,n, n);
+		tmp2=std::abs(x);
+		tmp3=std::abs(b1*b1*y);
+		
+		ma=(tmp2>tmp3)?tmp2:tmp3;
+		mma=1.0/ma;
 
-    x=matr[0];
-    y=1;
+		g=m_eeps*mma;
 
-	if(x * y < 0) 
-		cnt++;
-    double max;
-	for(int k = 1; k < n; k ++)
-	{
-		a = matr[k*n+k];
-		b = matr[k*n+k-1];
-		max = (std::abs(x) > std::abs(b * b * y)) ? std::abs(x):std::abs(b*b*y);
+		u=g*(a1*x-b1*b1*y);
+		v=g*x;
 
-		gamma = m_eps / max;
-		u = gamma * (a*x-b*b*y);
-		v = gamma * x;
+		if (u*x<0.0) m++;
 
-		if((u*x)<0) cnt ++;
-		x = u;
-		y = v;
+		x=u;
+		y=v;
+
+
 	}
-	return cnt;
-
+	return m;
 }
 
-int recursion(double* matr, int n, double eps,double left, double right, double* lmbd_values,int index){
-	int res;
-    double c;
-    /*
-	if(if_rec != 1 || iter > maxit)
-		return 1;
-	iter++;
-    */
-	int n_a = n_(matr, left, n);
-	int n_b = n_(matr, right, n);
-
-	if(n_b - n_a > 0)
-	{
-		if (right - left > eps) {
-			//if_rec = 1;
-			res = recursion(matr, n,eps, left, 0.5 * (left + right), lmbd_values,index); //, index, eps, if_rec, maxit, iter, meps, lam, eigen_krat, global_eigen_num);
-			if(res == -1) return -1;
-			//if_rec = 1;
-			res = recursion(matr, n,eps, 0.5 * (left + right), right, lmbd_values,index); //, index, eps, if_rec, maxit, iter, meps, lam, eigen_krat, global_eigen_num);
-			if(res == -1) return -1;
+int search_values(int n,double* matr,double* lmbd_values,double eps){
+	double a0, b0;
+	double a,b,c;
+	double m_eps=search_m_eps();
+	double mat_norm=matrix_norm(n,matr);
+	b0=mat_norm+m_eps;
+	a0=b0*(-1.0);
+	//std::cout<<"a0 = "<<a0<<" & b0 = "<<b0<<std::endl;
+	//lmbd_values[0]=a0;
+	int diff=0;
+	a=a0;
+	b=b0;
+	int k=0;
+	while (k<n){
+		
+		std::cout<<"Iteration "<<k<<std::endl;
+		while (b-a>eps){
+			c=(a+b)*0.5;
+			//std::cout<<"a = "<<a<<std::endl;
+			//std::cout<<"c = "<<c<<std::endl;
+			//std::cout<<"b = "<<b<<std::endl;
+			if (sign_changes(matr,n,c)<k+1) a=c;
+			else b=c;
 		}
-		else{
-			c = 0.5 * (left + right);
-			for(int i = 0; i < n_b - n_a; ++i) lmbd_values[index + i] = c;
-            index += n_b - n_a;
-			//lam[*global_eigen_num] = c;
-			//eigen_krat[*global_eigen_num] = n_b - n_a;
-			//(*global_eigen_num)++;
-
-			 //Добавляем кратность
-
-			if(index >= n)
-			{
-                std::cout<<"thats all"<<std::endl;
-				return 1;
-			}
+		c=(a+b)*0.5;
+		diff=sign_changes(matr,n,b)-sign_changes(matr,n,a);
+		if (diff<0){std::cout<<"o la la "<<std::endl; return -1;}
+		std::cout<<"diff = "<<diff<<" and c = "<<c<<std::endl;
+		for (int i=0;i<diff;++i) {
+			lmbd_values[k+i]=c;
+			if (std::abs(c)<m_eps*mat_norm) lmbd_values[k+i]=0.0;// подумать тут ещё...
 		}
-		return 1;
+		k+=diff;
+		a=c;
+		b=b0;		
 	}
-	else
-	{
-		//if_rec = -1;
-        std::cout<<"There is nothing here.."<<std::endl;
-		return 1;
-	}
-    return 0;
+
+	
+	//std::cout<<"n_(a) = "<<sign_changes(matr,n,a)<<std::endl;
+	//std::cout<<"n_(b) = "<<sign_changes(matr,n,b)<<std::endl;
+
+	return 1;
 }
 
 
+int discrepancy_inv1(int n,double* a,double* lmbd_values){
+	double matr_norm;
+	matr_norm = matrix_norm(n,a);
+	double s = 0;
+
+	//i*n+i
+	//(i+1)*n+i+1=i*n+n+i=(i*n+i)+n+1 
+	for(int i = 0; i < n; i ++){
+		s += (a[i * n + i] - lmbd_values[i]);
+	}
+	return std::abs(s);
+}
+
+void foo(char* a, char* b){
+	int i=0;
+	while (1){
+		if (b[i]==0) break;
+		a[i]=b[i];
+		i++;
+	}
+
+}
