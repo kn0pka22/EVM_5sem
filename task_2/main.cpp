@@ -64,7 +64,7 @@ int main(int argc, char** argv){
 	}
 	
 
-	std::cout<<"-------------------------Your original matrix------------------------\n"<<std::endl;
+	std::cout<<"----------------------------------Your original matrix--------------------------------\n"<<std::endl;
 	print_matrix_spv(array,n,n, m);
 
 	
@@ -72,7 +72,7 @@ int main(int argc, char** argv){
 	if (!x_k){
 		free(array_orig);
 		free(array);
-		std::cout<<"Not enough memory!\n";
+		std::cout<<"Info:   Not enough memory!\n";
 		return -1;
 	}
 
@@ -81,7 +81,7 @@ int main(int argc, char** argv){
 		free(array_orig);
 		free(array);
 		free(x_k);
-		std::cout<<"Not enough memory!\n";
+		std::cout<<"Info:   Not enough memory!\n";
 		return -1;
 	}
 
@@ -92,7 +92,7 @@ int main(int argc, char** argv){
 		free(array);
 		free(y);
 		free(x_k);
-		std::cout<<"Not enough memory!\n";
+		std::cout<<"Info:   Not enough memory!\n";
 		return -1;
 	}
 
@@ -104,7 +104,7 @@ int main(int argc, char** argv){
 		free(y);
 		free(x_k);
 		free(z);
-		std::cout<<"Not enough memory!\n";
+		std::cout<<"Info:   Not enough memory!\n";
 		return -1;
 	}
 
@@ -124,41 +124,39 @@ int main(int argc, char** argv){
 	double t1 = clock();
 	to_tridiag_form(array, y,x_k,z,n);
 	t1 = (clock() - t1) / CLOCKS_PER_SEC;
+
+
 	
 	double t2 = clock();
 	search_values(n,array,lmbd_values, eps);
 	t2 = (clock() - t2) / CLOCKS_PER_SEC;
-	
-	std::cout<<"--------------------- tridiag form ----------------\n"<<std::endl;
+
+	std::cout<<"--------------------------------------- tridiag form ---------------------------------\n"<<std::endl;
 	print_matrix_spv(array,n,n,m);
 	//int num=sign_changes(array,n,0);
 	//std::cout<<"Info:   number of negative eigenvalues = "<<num<<std::endl;
 	//
+	std::cout<<"Info:   duration for tridiag method          : "<<t1<<std::endl;
+	std::cout<<"Info:   duration of searching for eigenvalues: "<<t2<<std::endl;
+
+
+	double duration =(double)(t1+t2)/CLOCKS_PER_SEC;
+	std::cout<<"Info:   duration                             : "<<(t1+t2)<<std::endl;
 
 
 	double tmp=lmbd_values[0];
-	std::cout<<"   lmbd_values: \n";
+	std::cout<<"---------------------------------- Matrix eigenvalues ------------------------------- \n"<<std::endl;
 	for (int i=0;i<n;++i){
-		if (lmbd_values[i]==tmp) std::cout<<" "<<lmbd_values[i];
-		else std::cout<<"\n "<<lmbd_values[i];
+		if (lmbd_values[i]==tmp) std::cout<<i+1<<")"<<lmbd_values[i]<<"   ";
+		else std::cout<<std::endl<<i+1<<")"<<lmbd_values[i]<<"   ";
 		tmp=lmbd_values[i];
 	}
-	std::cout<<std::endl;
-	//
-	//std::cout<<std::endl;
+	std::cout<<"\n\n"<<std::endl;
 	
   
-	std::cout<<"~~~~~~~Duration for tridiag method: ~~~~~~: \n"<<t1<<std::endl;
-	std::cout<<"~~~~~~~Duration for bisection method: ~~~~: \n"<<t2<<std::endl;
-
-
-
-
-    double duration =(double)(t1+t2)/CLOCKS_PER_SEC;
-	std::cout<<"~~~~~~~Duration~~~~~~: \n"<<(t1+t2)<<std::endl;
         
-	std::cout<<"discrepancy_inv1 = "<<discrepancy_inv1(n,array,lmbd_values)<<std::endl;
-	std::cout<<"discrepancy_inv2 = "<<discrepancy_inv2(n,array,lmbd_values)<<std::endl;
+	std::cout<<"Info:   discrepancy_inv1 = "<<discrepancy_inv1(n,array,lmbd_values)<<std::endl;
+	std::cout<<"Info:   discrepancy_inv2 = "<<discrepancy_inv2(n,array,lmbd_values)<<std::endl;
 	//---------------------------not for task------------
 	
 	/*
