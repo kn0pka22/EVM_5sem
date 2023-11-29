@@ -15,6 +15,8 @@ int sym_matr(double* a, int n);
 
 int sign_changes(double* a,int n,double lmbd);
 
+
+
 double search_m_eps();
 
 int search_values(int n,double* a,double* lmbd_values,double eps);
@@ -24,4 +26,6 @@ double discrepancy_inv1(int n,double* a,double* lmbd_values);
 
 double discrepancy_inv2(int n,double* a,double* lmbd_values);
 
+void foo(char* a, char* b);
 
+void foo2(char* a, char* b);
