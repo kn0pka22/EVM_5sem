@@ -1,13 +1,15 @@
 #include "func.hpp"
 
 
-void print_matrix_spv(double* mas,int n,int m,int p){
+void print_matrix_spv(double* mas,int n,int l,int m){
     
-    int i, j, n_max = (n > p ? p : n), m_max = (m > p ? p : m);
-    for (i = 0; i < n_max; i ++) {
+    int i, j;
+	int n_min = (m < n ? m : n);
+	int l_min = (m < l ? m : l);
+    for (i = 0; i <n_min; i++) {
 		printf("     ");
-		for (j = 0; j < m_max; j ++)
-			printf(" %10.3e", mas[j*m + i]);
+		for (j = 0; j < l_min; j++)
+			printf(" %10.3e", mas[i*n+j]);
 		printf("\n");
 	}
     printf("\n\n");
@@ -143,11 +145,11 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,int n){
 			a[i * n + (i + 1)] = norm_a;
 	    	a[(i + 1) * n + i] = norm_a;
 
-			for(int k = i + 2; k < n; k++) {
-		    	a[i * n + k] = 0.0;
-		    	a[k* n + i] = 0.0;
-	    	}
-			continue;
+			//for(int k = i + 2; k < n; k++) {
+		    	//a[i * n + k] = 0.0;
+		    	//a[k* n + i] = 0.0;
+	    	//}
+			//continue;
 		}
 
 		x_k[i+1]=a[i*n+i+1]-norm_a;  
@@ -210,8 +212,9 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,int n){
         //std::cout<<"MatrB: \n\n"; print_matrix_spv(a,n,n, n);
 
     }
-	if (std::abs(a[(n-1)*n+n-2])<1e-15*mat_norm) a[(n-1)*n+n-2] = 0.0;   
-	if (std::abs(a[(n-2)*n+n-1])<1e-15*mat_norm) a[(n-2)*n+n-1] = 0.0;             
+	//std::cout<<"that s all!!!\n";
+	//if (std::abs(a[(n-1)*n+n-2])<1e-15*mat_norm) a[(n-1)*n+n-2] = 0.0;   
+	//if (std::abs(a[(n-2)*n+n-1])<1e-15*mat_norm) a[(n-2)*n+n-1] = 0.0;             
     return 0;
 
 }
@@ -294,7 +297,7 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
 	double a,b,c;
 	double m_eps=search_m_eps();
 	double mat_norm=matrix_norm(n,matr);
-	b0=mat_norm+m_eps;
+	b0=mat_norm+ mat_norm;
 	a0=b0*(-1.0);
 	//std::cout<<"a0 = "<<a0<<" & b0 = "<<b0<<std::endl;
 	//lmbd_values[0]=a0;
@@ -304,7 +307,7 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
 	int k=0;
 	while (k<n){
 		
-		std::cout<<"Iteration "<<k<<std::endl;
+		//std::cout<<"Iteration "<<k<<std::endl;
 		while (b-a>eps){
 			c=(a+b)*0.5;
 			//std::cout<<"a = "<<a<<std::endl;
@@ -312,11 +315,12 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
 			//std::cout<<"b = "<<b<<std::endl;
 			if (sign_changes(matr,n,c)<k+1) a=c;
 			else b=c;
+			//std::cout<<"b-a = "<<b-a<<std::endl;
 		}
 		c=(a+b)*0.5;
 		diff=sign_changes(matr,n,b)-sign_changes(matr,n,a);
 		if (diff<0){std::cout<<"o la la "<<std::endl; return -1;}
-		std::cout<<"diff = "<<diff<<" and c = "<<c<<std::endl;
+		//std::cout<<"diff = "<<diff<<" and c = "<<c<<std::endl;
 		for (int i=0;i<diff;++i) {
 			lmbd_values[k+i]=c;
 			if (std::abs(c)<m_eps*mat_norm) lmbd_values[k+i]=0.0;// подумать тут ещё...
@@ -334,25 +338,33 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
 }
 
 
-int discrepancy_inv1(int n,double* a,double* lmbd_values){
+double discrepancy_inv1(int n,double* a,double* lmbd_values){
 	double matr_norm;
 	matr_norm = matrix_norm(n,a);
-	double s = 0;
+	double s = 0.0;
 
 	//i*n+i
 	//(i+1)*n+i+1=i*n+n+i=(i*n+i)+n+1 
 	for(int i = 0; i < n; i ++){
 		s += (a[i * n + i] - lmbd_values[i]);
+		//std::cout<<"a[i * n + i] - lmbd_values[i] = "<<a[i * n + i]<<" - "<<lmbd_values[i]<<std::endl;
 	}
-	return std::abs(s);
+	//std::cout<<"     s       =        "<<std::abs(s)<<std::endl; 
+
+	return (std::abs(s)/matr_norm);
 }
 
-void foo(char* a, char* b){
-	int i=0;
-	while (1){
-		if (b[i]==0) break;
-		a[i]=b[i];
-		i++;
-	}
 
+double discrepancy_inv2(int n,double* a,double* lmbd_values){
+	double matr_norm;
+	matr_norm = matrix_norm(n,a);
+	double s1 = 0.0, s2 = 0.0;
+	for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			s1 += a[i * n + j] * a[j * n + i];
+		}
+		s2 +=  lmbd_values[i] *  lmbd_values[i];
+	} 
+
+	return (std::abs(sqrt(s1) - sqrt(s2))/matr_norm);
 }
