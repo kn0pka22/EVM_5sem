@@ -368,3 +368,24 @@ double discrepancy_inv2(int n,double* a,double* lmbd_values){
 
 	return (std::abs(sqrt(s1) - sqrt(s2))/matr_norm);
 }
+
+
+void foo(char* a, char* b){
+	int i=0;
+	while (1){
+		if (b[i]==0) break;
+		a[i]=b[i];
+		i++;
+	}
+
+}
+
+void foo2(char* a, char* b){
+	//if ((*b)!=0) a=b;
+	while (b && a){
+		if ((*b)==0) break;
+		*(a++)=*(b++);
+		//a++;
+		//b++;
+	}
+}
