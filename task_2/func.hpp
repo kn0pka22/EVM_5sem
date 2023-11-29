@@ -11,12 +11,17 @@ int input_matr(int n,double* arr, int k,const char* fname);
 
 int to_tridiag_form(double *a, double* y,double* x_k, double* z,int n);
 
-int to_tridiag_form(double *a, double* y,double* x_k, double* z,double* matrB,int n);
+int sym_matr(double* a, int n);
 
-int SymMatr(double* a, int n);  
+int sign_changes(double* a,int n,double lmbd);
 
-int recursion(double* matr, int n, double eps,double left, double right, double* lambda,int index);
+double search_m_eps();
 
-int n_(double * matr, double lmbd, int n);
+int search_values(int n,double* a,double* lmbd_values,double eps);
 
-double SearchEps();
+
+double discrepancy_inv1(int n,double* a,double* lmbd_values);
+
+double discrepancy_inv2(int n,double* a,double* lmbd_values);
+
+
