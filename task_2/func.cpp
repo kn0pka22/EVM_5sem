@@ -237,6 +237,7 @@ int sign_changes(double* a,int n,double lmbd){
 	double x,y,u,v,g;
 	double m_eps=search_m_eps();
 	double a1,b1;
+	double mat_norm=matrix_norm(n,a);
 
 
 	//---------------alpha=4*max{ max{|a_i|}, max{|b_i|} }----------------
@@ -275,20 +276,21 @@ int sign_changes(double* a,int n,double lmbd){
 		tmp3=std::abs(b1*b1*y);
 		
 		ma=(tmp2>tmp3)?tmp2:tmp3;
+		//if (ma<mat_norm*m_eps) ma
 		mma=1.0/ma;
 
 		g=m_eeps*mma;
 
 		u=g*(a1*x-b1*b1*y);
 		v=g*x;
-
-		if (u*x<0.0) m++;
+		//std::cout<<"u*x = "<<u*x<<std::endl;
+		//|| std::abs(u*x)<mat_norm*m_eps
+		if (u*x<0.0 ) m++;
 
 		x=u;
 		y=v;
-
-
 	}
+	//std::cout<<"m = "<<m<<std::endl;
 	return m;
 }
 
@@ -297,7 +299,7 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
 	double a,b,c;
 	double m_eps=search_m_eps();
 	double mat_norm=matrix_norm(n,matr);
-	b0=mat_norm+ mat_norm;
+	b0=mat_norm + eps;
 	a0=b0*(-1.0);
 	//std::cout<<"a0 = "<<a0<<" & b0 = "<<b0<<std::endl;
 	//lmbd_values[0]=a0;
@@ -310,20 +312,21 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
 		//std::cout<<"Iteration "<<k<<std::endl;
 		while (b-a>eps){
 			c=(a+b)*0.5;
-			//std::cout<<"a = "<<a<<std::endl;
-			//std::cout<<"c = "<<c<<std::endl;
-			//std::cout<<"b = "<<b<<std::endl;
+			std::cout<<"a = "<<a<<std::endl;
+			std::cout<<"b = "<<b<<std::endl;
+			std::cout<<"c = "<<c<<std::endl;
 			if (sign_changes(matr,n,c)<k+1) a=c;
 			else b=c;
 			//std::cout<<"b-a = "<<b-a<<std::endl;
 		}
-		c=(a+b)*0.5;
+		//c=(a+b)*0.5;
 		diff=sign_changes(matr,n,b)-sign_changes(matr,n,a);
 		if (diff<0){std::cout<<"o la la "<<std::endl; return -1;}
-		//std::cout<<"diff = "<<diff<<" and c = "<<c<<std::endl;
+		std::cout<<"diff = "<<diff<<" and c = "<<c<<std::endl;
 		for (int i=0;i<diff;++i) {
 			lmbd_values[k+i]=c;
-			if (std::abs(c)<m_eps*mat_norm) lmbd_values[k+i]=0.0;// подумать тут ещё...
+			//if (std::abs(c)<mat_norm*m_eps) lmbd_values[k+i]=0.0;  // подумать тут ещё...
+			//std::cout<<"m_eps*mat_norm = "<<m_eps*mat_norm<<std::endl;
 		}
 		k+=diff;
 		a=c;
