@@ -49,7 +49,7 @@ int main(int argc, char** argv){
 	}
 		
 	
-	if (input_matr(n,array_orig, k,fname)!=1 || SymMatr(array_orig, n)!=1){
+	if (input_matr(n,array_orig, k,fname)!=1){
         free(array_orig);
         free(array); 
         return -1;
@@ -97,60 +97,104 @@ int main(int argc, char** argv){
 	}
 
 
-	double* matrB=(double*)malloc(n*n*sizeof(double)); 
-	if (!matrB){
-		free(array_orig);
-		free(array);
-		free(y);
-		free(x_k);
-		free(z);
-		std::cout<<"Not enough memory!\n";
-		return -1;
-	}
-
 	double* lmbd_values=(double*)malloc(n*n*sizeof(double)); 
-	if (!matrB){
+	if (!lmbd_values){
 		free(array_orig);
 		free(array);
 		free(y);
 		free(x_k);
 		free(z);
-		free(matrB);
 		std::cout<<"Not enough memory!\n";
 		return -1;
 	}
 
-	for (int i=0;i<n;++i){
-		for (int j=0;j<n;++j){
-			matrB[i*n+j]=array_orig[j*n+i];
-		}   
+	
+	if (sym_matr(array,n)<0){
+		free(array_orig);
+		free(array);
+		free(y);
+		free(x_k);
+		free(z);
+		std::cout<<"Info:   the matrix is not symmetrical!\n";
+		return -1;
 	}
 
-	double norma = matrix_norm(n,array);
-	std::cout<<"-------------In the process of calculating --------\n"<<std::endl;
+
+
+	double t1 = clock();
+	to_tridiag_form(array, y,x_k,z,n);
+	t1 = (clock() - t1) / CLOCKS_PER_SEC;
 	
-	int w = to_tridiag_form(array, y,x_k,z, matrB,n);
-	//w=recursion(matrB, n, eps,(-1.0)*norma, norma, lmbd_values,0);
-	//n_(matrB, 1, n);
+	double t2 = clock();
+	search_values(n,array,lmbd_values, eps);
+	t2 = (clock() - t2) / CLOCKS_PER_SEC;
+	
+	std::cout<<"--------------------- tridiag form ----------------\n"<<std::endl;
+	print_matrix_spv(array,n,n,m);
+	//int num=sign_changes(array,n,0);
+	//std::cout<<"Info:   number of negative eigenvalues = "<<num<<std::endl;
+	//
 
-	print_matrix_spv(matrB,n,n, m);
-	//n_(array, 1, n);
 
-	/*
-	std::cout<<"values: ";
-	for (int i=0;i<n;++i){ 
-		std::cout<<lmbd_values[i]<<" ";
+	double tmp=lmbd_values[0];
+	std::cout<<"   lmbd_values: \n";
+	for (int i=0;i<n;++i){
+		if (lmbd_values[i]==tmp) std::cout<<" "<<lmbd_values[i];
+		else std::cout<<"\n "<<lmbd_values[i];
+		tmp=lmbd_values[i];
 	}
 	std::cout<<std::endl;
+	//
+	//std::cout<<std::endl;
+	
+  
+	std::cout<<"~~~~~~~Duration for tridiag method: ~~~~~~: \n"<<t1<<std::endl;
+	std::cout<<"~~~~~~~Duration for bisection method: ~~~~: \n"<<t2<<std::endl;
 
-	*/
-    
+
+
+
+    double duration =(double)(t1+t2)/CLOCKS_PER_SEC;
+	std::cout<<"~~~~~~~Duration~~~~~~: \n"<<(t1+t2)<<std::endl;
+        
+	std::cout<<"discrepancy_inv1 = "<<discrepancy_inv1(n,array,lmbd_values)<<std::endl;
+	std::cout<<"discrepancy_inv2 = "<<discrepancy_inv2(n,array,lmbd_values)<<std::endl;
+	//---------------------------not for task------------
+	
+	/*
+	char* A=new char[n];
+	char* B=new char[n];
+	char* C=new char[n];
+	
+	for (int i=0;i<n;++i ) B[i] = rand();
+	for (int i=0;i<n;++i ) C[i] =rand(); 
+
+	std::cout<<"\n array B:  "; for (int i=0;i<n;++i ) std::cout<<B[i]<<"  ";
+	std::cout<<"\n array C:  "; for (int i=0;i<n;++i ) std::cout<<C[i]<<"  ";
+
+	double t_foo1 = clock();
+	foo(A, B);
+	t_foo1 = (clock() - t_foo1) / CLOCKS_PER_SEC;
+
+	double t_foo2 = clock();
+	foo2(A, C);
+	t_foo2 = (clock() - t_foo2) / CLOCKS_PER_SEC;
+	std::cout<<"\n array A:  "; for (int i=0;i<n;++i ) std::cout<<A[i]<<"  ";
+	std::cout<<std::endl;
+	std::cout<<"Duration for foo1: "<<t_foo1<<" and for foo2: "<<t_foo2<<std::endl;
+
+	
+	delete[] A;
+	delete[] B;
+	delete[] C;
+	
+*/
+
 	free(array);
 	free(array_orig);
 	free(y);
 	free(z);
 	free(x_k);
-	free(matrB);
 	free(lmbd_values);
 	
 
