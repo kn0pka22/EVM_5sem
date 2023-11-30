@@ -143,7 +143,7 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,int n){
 		norm_a=sqrt(s+(a[i*n+i+1]*a[i*n+i+1]));
 
         //-----------x_k----------
-		if (s<1e-15*mat_norm){                                        //подумать тут ещё 
+		if (s<1e-15*mat_norm){                                     
 			a[i * n + (i + 1)] = norm_a;
 	    	a[(i + 1) * n + i] = norm_a;
 
@@ -159,31 +159,28 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,int n){
 		if (norm_x<1e-15*mat_norm){ 
 			continue;
 		}		
-		//std::cout<<"!!!!!!!!!!!!!!!!norm_x = "<<mat_norm<<std::endl;
+		
 		if ((norm_x-0.0)<m_eps) {norm_x=1.0;  /**/}
 		norm=1.0/norm_x;
         	
         
 		x_k[i+1]*=norm;
 
-        //std::cout<<"x = (";
-        //std::cout<<x_k[i+1]<<" ";
+      
 		for (int j=i+2;j<n;++j){
 			x_k[j]=a[i*n+j]*norm;
-            //std::cout<<x_k[j]<<" ";
+           
 		}
-        //std::cout<<")\n";    
-
         //------------y-----------
-        //std::cout<<"y = (";
+       
         for (int k=i+1;k<n;++k){
             y[k]=0.0;
             for (int j=i+1;j<n;++j){
                 y[k]+=a[j*n+k]*x_k[j];
             }
-            //std::cout<<y[k]<<" ";
+           
         }
-        //std::cout<<")\n";
+        
         
         //-----alpha = 2(x,y)-----
 		alpha=0.0;
@@ -193,12 +190,12 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,int n){
         alpha*=2.0;
         
         //-----z = 2y-alpha*x-----
-        //std::cout<<"z = (";
+
         for (int k=i+1;k<n;++k){
             z[k]=2.0*y[k]-alpha*x_k[k];
-            //std::cout<<z[k]<<" ";
+            
         }
-        //std::cout<<")\n";
+        
 
         //---matrB = A-zx*-xz*----
 
@@ -215,13 +212,12 @@ int to_tridiag_form(double* a, double* y,double* x_k, double* z,int n){
 		    a[i * n + k] = 0.0;
 		    a[k* n + i] = 0.0;
 	    }
-        //std::cout<<"MatrB: \n\n"; print_matrix_spv(a,n,n, n);
-
+      
     }
 
 	//if (std::abs(a[(n-1)*n+n-2])<1e-15*mat_norm) a[(n-1)*n+n-2] = 0.0;   
 	//if (std::abs(a[(n-2)*n+n-1])<1e-15*mat_norm) a[(n-2)*n+n-1] = 0.0;            
-    std::cout<<"that s all!!!\n";
+  
     return 0;
 
 }
@@ -266,12 +262,10 @@ int sign_changes(double* a,int n,double lmbd){
     if (alpha<m_eps) alpha=1;
      
 	double aalpha=1.0/alpha;
-    //std::cout<<"aalpha = " <<aalpha<<std::endl;
-
-	//for (int i=0;i<n*n;++i) a[i]*=aalpha;
+   
 
 	x=aalpha*(a[0]-lmbd);
-    //std::cout<<"aalpha*(a[0]-lmbd)   =   " <<aalpha<<"*("<<a[0]<<"-"<<lmbd<<")"<<std::endl;
+ 
      
 	y=1.0;
 	if (x<0) m++;
@@ -291,7 +285,7 @@ int sign_changes(double* a,int n,double lmbd){
 		       
 		ma=(tmp2>tmp3)?tmp2:tmp3;
 		if (ma<m_eps) ma=1;
-        //std::cout<<"ma = " <<ma<<std::endl;
+       
 		mma=1.0/ma;
         if (ma<m_eps) ma=1;
 		g=m_eeps*mma;
@@ -305,7 +299,7 @@ int sign_changes(double* a,int n,double lmbd){
 		x=u;
 		y=v;
 	}
-	//std::cout<<"m = "<<m<<std::endl;
+	
 	return m;
 }
 
@@ -342,9 +336,8 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
 		//std::cout<<"diff = "<<diff<<" and c = "<<c<<std::endl;
 		for (int i=0;i<diff;++i) {
 			lmbd_values[k+i]=c;
-			//if (std::abs(c)<mat_norm*m_eps) lmbd_values[k+i]=0.0;  // подумать тут ещё...
-			if (std::abs(c)<eps) lmbd_values[k+i]=0.0;  // подумать тут ещё...
-			//std::cout<<"m_eps*mat_norm = "<<m_eps*mat_norm<<std::endl;
+			if (std::abs(c)<eps) lmbd_values[k+i]=0.0;  
+			
 		}
 		k+=diff;
 		a=c;
@@ -352,10 +345,6 @@ int search_values(int n,double* matr,double* lmbd_values,double eps){
       
 	}
 
-	
-	//std::cout<<"n_(a) = "<<sign_changes(matr,n,a)<<std::endl;
-	//std::cout<<"n_(b) = "<<sign_changes(matr,n,b)<<std::endl;
-  std::cout<<"that s alll"<<std::endl;
 	return 1;
 }
 
@@ -372,7 +361,7 @@ double discrepancy_inv1(int n,double* a,double* lmbd_values){
 		s += (a[i * n + i] - lmbd_values[i]);
 		//std::cout<<"a[i * n + i] - lmbd_values[i] = "<<a[i * n + i]<<" - "<<lmbd_values[i]<<std::endl;
 	}
-	//std::cout<<"     s       =        "<<std::abs(s)<<std::endl; 
+
     if (matr_norm<m_eps) matr_norm=1;
 	return (std::abs(s)/matr_norm);
 }
