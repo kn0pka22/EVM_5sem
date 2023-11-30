@@ -1,3 +1,4 @@
+
 #include "func.hpp"
 
 
@@ -11,13 +12,13 @@ int main(int argc, char** argv){
 	
 	if (argc<5 || argc>6){ std::cout<<"Please enter argc=5 or argc=6!\n"; return -1;} 
     if (sscanf(argv[1], "%d", &n) != 1 || sscanf(argv[2], "%d", &m) != 1 || sscanf(argv[3], "%lf", &eps) != 1
-    || sscanf(argv[4], "%d", &k) != 1 || (argc<5) || (argc>6) || (k<0) || (m<0) || (n<1) || (k>4) || (eps<0.0)){ 
+    || sscanf(argv[4], "%d", &k) != 1 || (argc<5) || (argc>6) || (k<0) || (m<0) || (n<1) || (k>5) || (eps<0.0)){ 
         
         std::cout<<"Invalid input!\n \
-        * n – matrix dimension, \n \
-        * m – the number of output results in the matrix, \n \
-        * k – specifies the number of the formula for preparing matrices (-1< k <5), should be equal to 0 when input matrix from file \n \
-        * filename – the name of the file from which the matrix should be read. This argument is missing if k! = 0.\n\n\
+        * n вЂ“ matrix dimension, \n \
+        * m вЂ“ the number of output results in the matrix, \n \
+        * k вЂ“ specifies the number of the formula for preparing matrices (-1< k <5), should be equal to 0 when input matrix from file \n \
+        * filename вЂ“ the name of the file from which the matrix should be read. This argument is missing if k! = 0.\n\n\
         Please enter: ./a.out n m k(>0)   \n\
         or    enter: ./a.out n m k(=0) filename  \n";
 
@@ -140,18 +141,20 @@ int main(int argc, char** argv){
 	std::cout<<"Info:   duration of searching for eigenvalues: "<<t2<<std::endl;
 
 
-	double duration =(double)(t1+t2)/CLOCKS_PER_SEC;
+	//double duration =(double)(t1+t2)/CLOCKS_PER_SEC;
 	std::cout<<"Info:   duration                             : "<<(t1+t2)<<std::endl;
 
 
 	double tmp=lmbd_values[0];
 	std::cout<<"---------------------------------- Matrix eigenvalues ------------------------------- \n"<<std::endl;
 	for (int i=0;i<n;++i){
-		if (lmbd_values[i]==tmp) std::cout<<i+1<<")"<<lmbd_values[i]<<"   ";
+		if ((lmbd_values[i]-tmp)<eps) std::cout<<i+1<<")"<<lmbd_values[i]<<"   ";
 		else std::cout<<std::endl<<i+1<<")"<<lmbd_values[i]<<"   ";
 		tmp=lmbd_values[i];
 	}
 	std::cout<<"\n\n"<<std::endl;
+    
+    //std::cout<<"HEREE!!!"<<std::endl;
 	
   
         
