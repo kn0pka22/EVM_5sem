@@ -14,9 +14,8 @@ library(tsbox)
 
 #Загрузка данных высокочастотных акций
 #stock_prices <- read.csv("JNJ.xlsx")
-stock_prices <- read.csv("C:\\Users\\maria\\Downloads\\JNJ (1).csv")
-str(stock_prices)
-stock_prices <- ts(stock_prices$Close)
+dd <- read.csv("gdp_russia.csv")
+stock_prices <- xts(stock_prices$Close)
 View(stock_prices)
 
 # Загрузка данных низкочастотных макропараметров (например, ВВП)
