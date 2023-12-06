@@ -1,0 +1,9 @@
+OPT = -pthread -O3
+proga: main.o matr.o
+	g++  $(OPT) main.o matr.o -o proga 
+main.o: main.cpp matr.hpp
+	g++ -c $(OPT) main.cpp -c
+matr.o: matr.cpp matr.hpp
+	g++ -c $(OPT) matr.cpp -c
+clean:
+	rm -f *.o proga
