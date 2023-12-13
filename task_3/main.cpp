@@ -2,32 +2,25 @@
 #include "matr.hpp"
 
 
-
-
-
 int main(int argc, char** argv) {
 
     int n=1;
-	
-	int m=0; //r
+	int m=0;
 	int k=-1;
 	int w;
-	int thread_count=1;  // p
-	long double time;
+    int p;       //total_threads
 
-	//double* array;
-	//double* array_inv;
-	//double* array_orig;
 	
 	char* fname;
+
+
 	
 	if (argc<5 || argc>6){ printf("Please enter argc=5 or argc=6!\n"); return -1;} 
-    if (((sscanf(argv[1], "%d", &n) != 1) || (sscanf(argv[2], "%d", &thread_count) != 1 )
-    || (sscanf(argv[3], "%d", &m) != 1) ||  (sscanf(argv[4], "%d", &k) != 1) || (argc<5) || (argc>6) || (k<0) || (m<0) || (n<1) ||   (thread_count<1) || (k>4))){ 
+    if (((sscanf(argv[1], "%d", &n) != 1) || (sscanf(argv[2], "%d", &p) != 1) 
+    || (sscanf(argv[3], "%d", &m) != 1) || (sscanf(argv[4], "%d", &k) != 1)|| (argc<5) || (argc>6) || (k<0) || (m<0) || (n<1) || (k>4))){ 
         
         printf("Invalid input!\n \
         * n – matrix dimension, \n \
-		* p - number of threads used, \n \
         * m – the number of output results in the matrix, \n \
         * k – specifies the number of the formula for preparing matrices (-1< k <5), should be equal to 0 when input matrix from file \n \
         * filename – the name of the file from which the matrix should be read. This argument is missing if k! = 0.\n\n\
@@ -38,7 +31,7 @@ int main(int argc, char** argv) {
     }
     
 	if (n<m) m=n;
-	if (k==0 && argc==5){
+	if ((k==0) && (argc==5)){
 		std::cout<<"Please enter the name of file!"<<std::endl;
         
 		return -1; 
@@ -52,7 +45,7 @@ int main(int argc, char** argv) {
 	
     //printf("%p - %ld\n",(void*)array_orig,n*n*sizeof(double));
     if (!array_orig) {
-		printf("Not enough memory!\n");
+		std::cout<<"\nInfo:   not enough memory!"<<std::endl;
        
 		return -1;
 	}
@@ -61,7 +54,7 @@ int main(int argc, char** argv) {
     //printf("Not enough memory!222222222222222\n");
 	if (!array) {
         free(array_orig);
-		printf("Not enough memory!\n");
+		std::cout<<"\nInfo:   not enough memory!"<<std::endl;
         
 		return -1;
 	}
@@ -70,7 +63,7 @@ int main(int argc, char** argv) {
     if (!array_inv) {
         free(array_orig);
         free(array);
-		printf("Not enough memory!\n");
+		std::cout<<"\nInfo:   not enough memory!"<<std::endl;
        
 		return -1;
 	}
@@ -117,106 +110,113 @@ int main(int argc, char** argv) {
 	//ineffective_method(array,array_inv,n);
    
     double* x_k=(double*)malloc((n)*sizeof(double)); 
-
-//-----------------------------
-	
-    
-
-	pthread_t* threads=(pthread_t*)malloc((thread_count)*sizeof(pthread_t)); 
-	
-
-	if (!threads){
-		free(array_orig);
+    if (!x_k) {
+        free(array_orig);
         free(array);
         free(array_inv);
-		free(x_k);
-		return -2;
+		std::cout<<"\nInfo:   not enough memory!"<<std::endl;
+       
+		return -1;
 	}
 
-	ARGS* args=(ARGS*)malloc((thread_count)*sizeof(ARGS));
 
-	if (!args){
-		free(array_orig);
+//----------------------------for 3 task--------------------
+
+
+    ARGS* args; //array of arguments for created tasks
+    pthread_t* threads; //array of created task identifiers
+
+    if (!(args=(ARGS*)malloc(p*sizeof(ARGS)))){
+        std::cout<<"\nInfo:   not enough memory"<<std::endl;
+        free(array_orig);
         free(array);
         free(array_inv);
-		free(x_k);
-		free(threads);
-		return -2;
-	}
-
-	for (int i = 0; i < thread_count; ++i) {
-        args[i].a = array;
-		args[i].x_k = x_k;
-		args[i].n = n;
-		args[i].thread_num = i;
-		args[i].total_threads = thread_count;
-		args[i].k = k;
+        free(x_k);
+        return -2;
     }
 
-//int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
+    if (!(threads=(pthread_t*)malloc(p*sizeof(pthread_t)))){
+        std::cout<<"\nInfo:   not enough memory"<<std::endl;
+        free(array_orig);
+        free(array);
+        free(array_inv);
+        free(x_k);
+        free(args);
+        return -2;
+    }
 
-/*
-The thread parameter is of type pthread_t. The created thread will always be accessible with this reference.
-The attr parameter lets you specify custom behavior. You can use a series of thread-specific functions starting with pthread_attr_ to set up this value. Possible customizations are the scheduling policy, stack size, and detach policy.
-start_routine specifies the function that the thread will run.
-arg represents a generic data structure passed to the function by the thread.
-*/
 
 
-//std::cout<<"thread_count = "<<thread_count<<std::endl;
-	for (int i = 0; i < thread_count; i++){
-		if (pthread_create(threads + i, 0, effective_method, args + i)){
-			std::cout << "the thread with number " << i << " has not been created" << std::endl;
-			free(threads);
-			free(args);
-			free(x_k);
-			free(array);
-			free(array_orig);
-			free(array_inv);
-		}
-	}
+    for (int i = 0; i < p; i++) {
+        args[i].matrix = array;
+        args[i].inv = array_inv;
+        args[i].x_k = x_k;
+        args[i].n = n;
+        args[i].thread_num = i;
+        args[i].total_threads = p;
+    }
 
-	for (int i = 0; i < thread_count; i++) {
-		
-			if (pthread_join(threads[i], 0)) {
-				std::cout << "the thread with number " << i << " has not been started" << std::endl;
-				free(threads);
-				free(args);
-				free(x_k);
-				free(array);
-				free(array_orig);
-				free(array_inv);
-			}
-			
-	}
+    //p=total threads
 
-//----------------------------
+    
+    for (int i = 0; i < p; ++i) {
+        if (pthread_create(threads + i, 0, effective_method, args + i)) {
+            std::cout <<"\nInfo:   the thread " << i << " has not been created" <<std::endl;
+            free(threads);
+            free(args);
+            free(x_k);
+            free(array);
+            free(array_orig);
+            free(array_inv);
+            return - 3;
+        }
+    }
+
+    for (int i = 0; i < p; ++i) {
+        if (pthread_join(threads[i], 0)) {
+            std::cout << "\nInfo:   the thread" << i << " has not been joined!" << std::endl;
+            free(threads);
+            free(args);
+            free(x_k);
+            free(array);
+            free(array_orig);
+            free(array_inv);
+            return - 3;
+        }
+    }
+    
+    
+    //effective_method(array,array_inv, n, x_k);
+    //effective_method( array_orig,array_inv, n,x_k,0,1);
+    
+
+
+
+
+//-----------------------------------
 
 	//clock_t start=clock();
 	//w=effective_method(array,array_inv,n,x_k);
 	//clock_t end=clock();
 
-    double duration =1;//=(double)(end-start)/CLOCKS_PER_SEC;
+    //double duration =(double)(end-start)/CLOCKS_PER_SEC;
     
 	//print_matrix(array,m);
 	
 	//print_matrix(array_inv,m);
-	printf("%s : residual = %e elapsed = %.2f s = %d n = %d m = %d p = %d\n", argv[0], norm(n,array_orig,array_inv), duration, k, n, m, thread_count);
-
-    /*if (w==0){
+    //if (w==0){
 
 		std::cout<<"--------------------------Your inverse matrix------------------------\n"<<std::endl;
         print_matrix_spv(array_inv,n,n, m);
-        std::cout<<"Info:   duration                             : "<<duration<<std::endl;
-        std::cout<<"Info:   norma                                : "<<norm(n,array_orig,array_inv)<<std::endl;
+        //std::cout<<"~~~~~~~Duration~~~~~~: \n"<<duration<<std::endl;
+	    std::cout<<"\nInfo:   norma = "<<norm(n,array_orig,array_inv)<<std::endl;
+        
     
-    
-    }*/
+    //}
     //else std::cout<<"Info:   Matrix singular! (0..0)"<<std::endl;
     
-
-	free(threads);
-	free(args);
+    free(threads);
+    free(args);
     free(x_k);
 	free(array);
 	free(array_orig);
