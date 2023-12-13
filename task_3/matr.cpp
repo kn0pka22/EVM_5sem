@@ -222,29 +222,45 @@ int gauss_back_run(double* a,double* inv, int n){
 }
 
 
+void synchronize(int total_threads) {  //Bgch, page 180
+    
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    static pthread_cond_t condvar_in = PTHREAD_COND_INITIALIZER;
+    static pthread_cond_t condvar_out = PTHREAD_COND_INITIALIZER;
+    static int threads_in = 0;
+    static int threads_out = 0;
+    
+    pthread_mutex_lock(&mutex);
+    
+    threads_in++;
+    if (threads_in >= total_threads) {
+        threads_out = 0;
+        pthread_cond_broadcast(&condvar_in);
+    } else
+        while (threads_in < total_threads)
+            pthread_cond_wait(&condvar_in,&mutex);
+    
+    threads_out++;
+    if (threads_out >= total_threads) {
+        threads_in = 0;
+        pthread_cond_broadcast(&condvar_out);
+    } else
+        while (threads_out < total_threads)
+            pthread_cond_wait(&condvar_out,&mutex);
+    
+    pthread_mutex_unlock(&mutex);
+}
 
 
-int effective_method(double* a,double* inv, int n,double* x_k,int thread_num,int thread_count){
-	double s;	
+
+/*
+int effective_method(double* a,double* inv, int n,double* x_k){
+	double s;//,sum; 
 	double norm_a,norm_x,norm;	
 	double sp,sp2;
-	int tr;
 	double mat_norm=matrix_norm(n,a);
 
 	for(int i=0;i<n-1;++i){
-		//tr = (n-i) / thread_count;
-        //int start = thread_num * tr;
-        //int finish;
-
-
-		synchronize(thread_count);
-
-		//if (thread_num == thread_count - 1){
-        //    finish = n-i;
-        //} else {
-        //    finish = thread_num * tr + tr;
-        //}
-		
 		s=0.0;
 		for (int j=i+1;j<n;++j){
 			s+=(a[i*n+j]*a[i*n+j]);
@@ -292,57 +308,125 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num,int
 	
 	 return 0;
 }
+*/
 
 
 
-void synchronize(int total_threads) {
-    
-    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    static pthread_cond_t condvar_in = PTHREAD_COND_INITIALIZER;
-    static pthread_cond_t condvar_out = PTHREAD_COND_INITIALIZER;
-    static int threads_in = 0;
-    static int threads_out = 0;
-    
-    pthread_mutex_lock(&mutex);
-    
-    threads_in++;
-    if (threads_in >= total_threads) {
-        threads_out = 0;
-        pthread_cond_broadcast(&condvar_in);
-    } else
-        while (threads_in < total_threads)
-            pthread_cond_wait(&condvar_in,&mutex);
-    
-    threads_out++;
-    if (threads_out >= total_threads) {
-        threads_in = 0;
-        pthread_cond_broadcast(&condvar_out);
-    } else
-        while (threads_out < total_threads)
-            pthread_cond_wait(&condvar_out,&mutex);
-    
-    pthread_mutex_unlock(&mutex);
-}
+int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, int total_threads){
+	double s;
+	double norm_a,norm_x,norm;	
+	double sp,sp2;
+	double mat_norm=matrix_norm(n,a);
 
 
+    int first_index, last_index,tmp;
+    //std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);
 
-void* effective_method(void* args){
-	ARGS* arg = (ARGS*)args;
-	long double time;
+	for(int i=0;i<n-1;++i){
 
-	synchronize(arg -> total_threads);
-	//std::cout<<"matr a: \n"; print_matrix_spv(arg->a,arg->n,arg->n,4);
-	//time = get_time();
+        
+        synchronize(total_threads);
+
+
+        //
+
+        //std::cout<<"\nTHREAD_NUM = "<<thread_num<<std::endl;
+        //synchronize(total_threads);//-------------
+
+        
+        if (thread_num==0){
+            s=0.0;
+            for (int j=i+1;j<n;++j){
+                s+=(a[i*n+j]*a[i*n+j]);
+            }
+            norm_a=sqrt(s+(a[i*n+i]*a[i*n+i]));
+            x_k[i]=a[i*n+i]-norm_a;        
+            norm_x=sqrt(x_k[i]*x_k[i]+s);
+            if (norm_x<mat_norm * 1e-15){a[i*n+i]=norm_a;  continue; }        
+            norm=1.0/norm_x;
+            x_k[i]*=norm;
+            for (int j=i+1;j<n;++j){
+                x_k[j]=a[i*n+j]*norm;
+            }
+        }
+
+        synchronize(total_threads);
+        /*
+            f1___l1_____________  
+            |____|____|____|____| (n)
+
+                f1__l1__________  
+                |___|___|___|___| (n-1)
+
+        */
+        //tmp= (n-i) / total_threads;
+        tmp= n / total_threads;
+        first_index =tmp;
+        //first_index=tmp*thread_num+i;
+        first_index=tmp*thread_num;
+        last_index=(thread_num >= total_threads - 1)?n:(tmp*thread_num+tmp);
+
+        //last_index=first_index+tmp;
+        //synchronize(total_threads);
+
+
+        //synchronize(total_threads);
+        /*
+        std::cout<<"THREAD NUM = "<<thread_num<<", TOTAL THREADS = "<<total_threads<<"  AND IT IS FOR  THREAD NUMBER "
+        <<thread_num<<": FIRST INDEX = "<<first_index<<" AND LAST_INDEX = "<<last_index<<std::endl;
+        */
+        //--------------
+
+
+        //std::cout<<" FOR  THREAD NUMBER "
+        //<<thread_num<<": FIRST INDEX = "<<first_index<<" AND LAST_INDEX = "<<last_index<<std::endl;
+        
+		for (int j=first_index;j<last_index;++j){
+			sp=0.0;
+			sp2=0.0;
+			for (int k=i;k<n;++k){
+				sp+=x_k[k]*a[j*n+k];
+				sp2+=x_k[k]*inv[k*n+j];
+
+			}
+			for (int k=i;k<n;++k){
+				a[j*n+k]-=(2*sp*x_k[k]);
+				inv[k*n+j]-=(2*sp2*x_k[k]);	
+			}
+		}
+
+        synchronize(total_threads);
+
+	}
+
 	
-    effective_method(arg -> a, arg -> inv, arg -> n, arg->x_k, arg -> thread_num, arg -> total_threads);
+	//std::cout<<"Before Gauss:\n";
+    //std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);
+    //std::cout<<"matr inv: \n"; print_matrix_spv(inv,n,n,4);	
     
-    synchronize(arg -> total_threads);
-    //arg -> time_thread = get_time() - time;
+    
+	if (gauss_back_run(a,inv,n)==-1) return -1;
+       
 
-    //return NULL;
+    //std::cout<<"After Gauss:\n";
+    //std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);
+	//std::cout<<"matr inv: \n"; print_matrix_spv(inv,n,n,4);	
 
-	return 0;
+	
+	 return 0;
 }
 
 
+//183
+void* effective_method(void* pa){
+    ARGS* pargs = (ARGS*)pa;
 
+    long int t;
+    int i;
+    printf ("Thread %d started\n", pargs->thread_num);
+    synchronize(pargs -> total_threads);
+    effective_method(pargs->matrix,pargs->inv,pargs -> n,pargs -> x_k, pargs -> thread_num, pargs-> total_threads);
+    synchronize(pargs -> total_threads);
+
+    return 0;
+}
