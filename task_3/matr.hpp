@@ -1,18 +1,14 @@
 #include <iostream>
 #include <cmath>
 #include <ctime>  
-#include <thread>
-#include <mutex>
 
-typedef struct {
-    double * a;
-    double * inv;
-    double * x_k;
-    int n;
-    int thread_num;
-    int total_threads;
-    int k;
-    long double time_thread;
+typedef struct{
+    double* matrix;
+    double* x_k; 
+    double* inv; 
+    int n; // размер матрицы и
+    int thread_num; // номер задачи 
+    int total_threads; // всеrо задач 
 } ARGS;
 
 void print_matrix(double* mas,int n);
@@ -31,12 +27,14 @@ double formula(int k,int n, int ii,int jj);
 
 int input_matr(int n,double* arr, int k,const char* fname);
 
-void ineffective_method(double* a,double* inv, int n);
+//void ineffective_method(double* a,double* inv, int n);
 
 int gauss_back_run(double* a,double* inv, int n);
 
-int effective_method(double* a,double* inv, int n,double* x_k,int thread_num,int thread_count);
+int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, int total_threads);
 
 void synchronize(int total_threads);
 
-void* effective_method(void* arg);
+void* effective_method(void* pa);
+
+//int effective_method(double* a,double* inv, int n,double* x_k);
