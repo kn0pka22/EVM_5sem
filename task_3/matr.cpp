@@ -1,4 +1,16 @@
 #include "matr.hpp"
+#include <chrono>
+#include <ctime>
+#include <sys/time.h>
+
+
+long int get_full_time(){
+	struct timeval buf;
+	gettimeofday(&buf, 0);    //преобразуем время в секундах в сотые доли секунды
+	return buf.tv_sec  + buf.tv_usec/ 1000000.0;
+}
+
+
 
 
 void print_matrix(double* mas,int n){
@@ -406,47 +418,74 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
         synchronize(total_threads);
 
 	}
-	synchronize(total_threads);
+	//synchronize(total_threads);
 	
-	//std::cout<<"Before Gauss:\n";
-    //std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);
-    //std::cout<<"matr inv: \n"; print_matrix_spv(inv,n,n,4);	
-    
-    
-	//if (gauss_back_run(a,inv,n)==-1) return -1;
-
-	//-------------------Gauss-------------------
-	std::cout<<"Now Gauss: \n";
-	synchronize(total_threads);
-	double tmpp,tmppp;
+    /*
 	
-	for (int k=n-1;k>=1;--k){
-		for (int i=k-1;i>=0;--i){
-			tmpp=a[k*n+i];
-            double MEGAVAR = -tmpp/a[k*n+k];
-			for (int j=last_index-1;j>=first_index;--j){
-				std::cout<<"FIRST INDEX = "<<first_index<<" and LAST Index = "<<last_index<<std::endl;
+			for (int j=n-1;j>-1;--j){
 				a[j*n+i]+=MEGAVAR*a[j*n+k];
 				inv[i*n+j]+=MEGAVAR * inv[k*n+j];
 			}
-			synchronize(total_threads);
+	*/
+
+	/*
+	double tmpp;
+	for (int k=first_index;k<last_index;++k){
+		for (int i=n-1;i>=0;--i){
+			tmpp=a[k*n+i];
+			double MEGAVAR = -tmpp/a[k*n+k];
+			for (int j=0;j<n;++j){
+				a[j*n+i]
+
+			}
+			inv[i*n+k]=tmpp/a[i*n+i];
+
+		}
+		synchronize(total_threads);
+
+	}
+
+    */
+	//if (gauss_back_run(a,inv,n)==-1) return -1;
+
+	//-------------------Gauss-------------------
+	//std::cout<<"Now Gauss: \n";
+	//synchronize(total_threads);
+
+	//first_index=tmp*thread_num;
+    //last_index=(thread_num >= total_threads - 1)?n:(tmp*thread_num+tmp);
+	
+	
+	//---------------------------------------------------------------------------------------------------------------------------	
+
+	/*
+synchronize(total_threads);
+if (thread_num==0){
+	std::cout<<"After Gauss:\n";
+    std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);
+	
+    for (int k=n-1;k>=1;--k){
+		for (int i=k-1;i>=0;--i){
+			tmp=a[k*n+i];
+            double MEGAVAR = -tmp/a[k*n+k];
+			for (int j=n-1;j>-1;--j){
+				a[j*n+i]+=MEGAVAR*a[j*n+k];
+				inv[i*n+j]+=MEGAVAR * inv[k*n+j];
+			}
 			
 		}
-		synchronize(total_threads);
-		
+
 	}
 	synchronize(total_threads);
-	
 	for (int i=0;i<n;++i){
-		tmpp=a[i*n+i];
-        	for (int j=0;j<n;++j){
-			a[j*n+i]=a[j*n+i]/tmpp;
-			inv[i*n+j]=inv[i*n+j]/tmpp;
-		}
-		synchronize(total_threads);
-		
+		tmp=a[i*n+i];     
+		for (int j=0;j<n;++j){
+			a[j*n+i]=a[j*n+i]/tmp;
+			inv[i*n+j]=inv[i*n+j]/tmp;
+		}  
 	}
-		
+}
+synchronize(total_threads);*/
 		/*
 		for (int i=0;i<n;++i){
 			tmpp=a[i*n+i];
