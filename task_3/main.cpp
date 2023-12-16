@@ -156,6 +156,9 @@ int main(int argc, char** argv) {
         args[i].total_threads = p;
     }
 
+    double time = get_full_time();
+
+
     //p=total threads
 
     
@@ -185,6 +188,7 @@ int main(int argc, char** argv) {
         }
     }
     
+	time = get_full_time() - time;
     
     //effective_method(array,array_inv, n, x_k);
     //effective_method( array_orig,array_inv, n,x_k,0,1);
@@ -205,11 +209,13 @@ int main(int argc, char** argv) {
 	
 	//print_matrix(array_inv,m);
     //if (w==0){
-
+        gauss_back_run(array,array_inv,n);
 		std::cout<<"--------------------------Your inverse matrix------------------------\n"<<std::endl;
         print_matrix_spv(array_inv,n,n, m);
         //std::cout<<"~~~~~~~Duration~~~~~~: \n"<<duration<<std::endl;
-	    std::cout<<"\nInfo:   norma = "<<norm(n,array_orig,array_inv)<<std::endl;
+	    //std::cout<<"\nInfo:   norma = "<<norm(n,array_orig,array_inv)<<std::endl;
+
+        printf("%s : residual = %e elapsed = %.2f s = %d n = %d m = %d p = %d\n", argv[0], norm(n,array_orig,array_inv), time, k, n, m, p);
         
     
     //}
