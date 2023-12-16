@@ -38,3 +38,5 @@ void synchronize(int total_threads);
 void* effective_method(void* pa);
 
 //int effective_method(double* a,double* inv, int n,double* x_k);
+
+long int get_full_time();
