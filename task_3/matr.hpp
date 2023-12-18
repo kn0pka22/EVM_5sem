@@ -9,6 +9,7 @@ typedef struct{
     int n; // размер матрицы и
     int thread_num; // номер задачи 
     int total_threads; // всеrо задач 
+    double time;
 } ARGS;
 
 void print_matrix(double* mas,int n);
@@ -19,7 +20,7 @@ int is_zero_matrix(int n, double *a);
 
 void print_matrix_spv(double* mas,int n1,int n2,int m);
 
-double norm(int n, double* ar, double* inv);
+double norma(int n, double* ar, double* inv);
 
 double norm_vec(int n,double* vec);
 
@@ -39,4 +40,7 @@ void* effective_method(void* pa);
 
 //int effective_method(double* a,double* inv, int n,double* x_k);
 
-long int get_full_time();
+double get_full_time();
+
+void print_matrix_spv_row(double* mas,int n,int m,int p);
+s
