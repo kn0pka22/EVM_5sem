@@ -4,7 +4,7 @@
 #include <sys/time.h>
 
 
-long int get_full_time(){
+double get_full_time(){
 	struct timeval buf;
 	gettimeofday(&buf, 0);    //преобразуем время в секундах в сотые доли секунды
 	return buf.tv_sec  + buf.tv_usec/ 1000000.0;
@@ -37,6 +37,18 @@ void print_matrix_spv(double* mas,int n,int m,int p){
     printf("\n\n");
 }
 
+void print_matrix_spv_row(double* mas,int n,int m,int p){  //for a matrix stored row by row
+    
+    int i, j, n_max = (n > p ? p : n), m_max = (m > p ? p : m);
+    for (i = 0; i < n_max; i ++) {
+		printf("     ");
+		for (j = 0; j < m_max; j ++)
+			printf(" %10.3e", mas[i*m + j]);
+		printf("\n");
+	}
+    printf("\n\n");
+}
+
 double formula(int k,int n, int ii,int jj){
 	int p,q,i,j;
 	i=ii+1;
@@ -54,7 +66,7 @@ double formula(int k,int n, int ii,int jj){
 
 
 
-double norm(int n, double* ar, double* inv) {
+double norma(int n, double* ar, double* inv) {
 	double ma = 0.0;
 	double str_sum = 0.0;
 	double sum=0.0;
@@ -84,8 +96,7 @@ double norm_vec(int m,double* vec){
 	return sqrt(sum);
 }
 
-double matrix_norm(int n, double *a)
-{
+double matrix_norm(int n, double *a){
 	double sum=0;
     double max=-10000;
 	double norm_m;
@@ -328,7 +339,13 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
 	double s;
 	double norm_a,norm_x,norm;	
 	double sp,sp2;
-	double mat_norm=matrix_norm(n,a);
+	double mat_norm;
+
+	double eps;
+	
+	
+	if (thread_num==0) eps=1e-15*matrix_norm(n,a);
+
 
 
     int first_index, last_index,tmp;
@@ -339,19 +356,17 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
     first_index=tmp*thread_num;
     last_index=(thread_num >= total_threads - 1)?n:(tmp*thread_num+tmp);
 
-	for(int i=0;i<n-1;++i){
+	if (thread_num==0){ eps = 1e-15* norma(n,a,inv); }
 
-        
+for(int i=0;i<n-1;++i){
+		
         synchronize(total_threads);
-
-
-        //
-
         //std::cout<<"\nTHREAD_NUM = "<<thread_num<<std::endl;
         //synchronize(total_threads);//-------------
 
         
         if (thread_num==0){
+			//std::cout<<"\nTHREAD_NUM = "<<thread_num<<std::endl;
             s=0.0;
             for (int j=i+1;j<n;++j){
                 s+=(a[i*n+j]*a[i*n+j]);
@@ -372,36 +387,15 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
             f1___l1_____________  
             |____|____|____|____| (n)
 
-                f1__l1__________  
+                f2__l2__________  
                 |___|___|___|___| (n)
 
         */
-        //tmp= (n-i) / total_threads;
-		//first_index=tmp*thread_num+i;
-
-		/*-------------------------
-        tmp= n / total_threads;
-        first_index =tmp;
         
-        first_index=tmp*thread_num;
-        last_index=(thread_num >= total_threads - 1)?n:(tmp*thread_num+tmp);
-		----------------------------*/
-        //last_index=first_index+tmp;
-        //synchronize(total_threads);
-
-
-        //synchronize(total_threads);
-        /*
-        std::cout<<"THREAD NUM = "<<thread_num<<", TOTAL THREADS = "<<total_threads<<"  AND IT IS FOR  THREAD NUMBER "
-        <<thread_num<<": FIRST INDEX = "<<first_index<<" AND LAST_INDEX = "<<last_index<<std::endl;
-        */
-        //--------------
-
-
-        //std::cout<<" FOR  THREAD NUMBER "
         //<<thread_num<<": FIRST INDEX = "<<first_index<<" AND LAST_INDEX = "<<last_index<<std::endl;
         
 		for (int j=first_index;j<last_index;++j){
+			//std::cout<<"\nTHREAD_NUM ======== "<<thread_num<<std::endl;
 			sp=0.0;
 			sp2=0.0;
 			for (int k=i;k<n;++k){
@@ -414,117 +408,67 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
 				inv[k*n+j]-=(2*sp2*x_k[k]);	
 			}
 		}
-
+		//std::cout<<"\nleave THREAD_NUM = "<<thread_num<<std::endl;
         synchronize(total_threads);
 
 	}
-	//synchronize(total_threads);
+
+	// std::cout<<" FOR  THREAD NUMBER "
+      //  <<thread_num<<": FIRST INDEX = "<<first_index<<" AND LAST_INDEX = "<<last_index<<std::endl;
 	
-    /*
-	
-			for (int j=n-1;j>-1;--j){
-				a[j*n+i]+=MEGAVAR*a[j*n+k];
-				inv[i*n+j]+=MEGAVAR * inv[k*n+j];
-			}
-	*/
-
-	/*
-	double tmpp;
-	for (int k=first_index;k<last_index;++k){
-		for (int i=n-1;i>=0;--i){
-			tmpp=a[k*n+i];
-			double MEGAVAR = -tmpp/a[k*n+k];
-			for (int j=0;j<n;++j){
-				a[j*n+i]
-
-			}
-			inv[i*n+k]=tmpp/a[i*n+i];
-
-		}
-		synchronize(total_threads);
-
-	}
-
-    */
-	//if (gauss_back_run(a,inv,n)==-1) return -1;
-
-	//-------------------Gauss-------------------
-	//std::cout<<"Now Gauss: \n";
-	//synchronize(total_threads);
-
-	//first_index=tmp*thread_num;
-    //last_index=(thread_num >= total_threads - 1)?n:(tmp*thread_num+tmp);
-	
-	
-	//---------------------------------------------------------------------------------------------------------------------------	
-
-	/*
-synchronize(total_threads);
-if (thread_num==0){
-	std::cout<<"After Gauss:\n";
-    std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);
-	
-    for (int k=n-1;k>=1;--k){
-		for (int i=k-1;i>=0;--i){
-			tmp=a[k*n+i];
-            double MEGAVAR = -tmp/a[k*n+k];
-			for (int j=n-1;j>-1;--j){
-				a[j*n+i]+=MEGAVAR*a[j*n+k];
-				inv[i*n+j]+=MEGAVAR * inv[k*n+j];
-			}
-			
-		}
-
-	}
-	synchronize(total_threads);
-	for (int i=0;i<n;++i){
-		tmp=a[i*n+i];     
-		for (int j=0;j<n;++j){
-			a[j*n+i]=a[j*n+i]/tmp;
-			inv[i*n+j]=inv[i*n+j]/tmp;
-		}  
-	}
-}
-synchronize(total_threads);*/
-		/*
-		for (int i=0;i<n;++i){
-			tmpp=a[i*n+i];
-			for (int j=0;j<n;++j){
-				a[j*n+i]=a[j*n+i]/tmp;
-				inv[i*n+j]=inv[i*n+j]/tmp;
-			}   
-		}
-		*/
-		//synchronize(total_threads);
-	
-	 
-
-
-
-    //std::cout<<"After Gauss:\n";
-    //std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);
-	//std::cout<<"matr inv: \n"; print_matrix_spv(inv,n,n,4);	
-
-	
-/*
-
-	for (int k=n-1;k>=0;--k){
-			tmppp=a[k*n+k];			
-			for (int i=last_index;i>=first_index;--i){
-				tmpp=inv[i*n+k];	
-				double MEGAVAR = -tmpp/tmppp;
-				
-				for (int j=n-1;j>-1;--j){
-					inv[i*n+j]=inv[i*n+j]/tmpp;
-					a[j*n+i]+=MEGAVAR*a[j*n+k];
-					inv[i*n+j]+=MEGAVAR * inv[k*n+j];
-				}
+	/*if (thread_num==0 ){
+			std::cout<<"BEFORE ALL : \n\n\n";
+				std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);     
+				std::cout<<"matr inv: \n"; print_matrix_spv_row(inv,n,n,4);     
+	}*/
+	double tmpp=1;
+	double MEGAVAR=0;
+	 for (int i = n-1; i >= 1; i--){
+         for (int j = i-1; j >=0; --j){
+			//synchronize(total_threads);
+	 		if (thread_num==0){
+				tmpp=a[i*n+i];
+				MEGAVAR = a[i*n+j]/tmpp;
+				a[i*n+j]-=MEGAVAR*a[i*n+i];
 			}
 			synchronize(total_threads);
-
-			
-		}*/
-	 return 0;
+	 		
+            for(int k = last_index-1; k >=first_index ; k--){
+                inv[j*n + k] -= MEGAVAR*inv[k + i*n];
+	        }
+			synchronize(total_threads);
+	 		/*if (thread_num==0 ){
+				std::cout<<"WORKSTHREAD 0\n";
+	 			std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);     
+	 			std::cout<<"matr inv: \n"; print_matrix_spv_row(inv,n,n,4);     
+	 		}*/
+    	}
+	 	synchronize(total_threads);
+	}
+	synchronize(total_threads);
+	
+	if (thread_num==0){
+		for (int i=0;i<n;++i){
+			tmpp=a[i*n+i]; 
+			if (std::abs(a[i*n+i])<eps){ std::cout<<"\nInfo:   bad matrix!\n"; return -1;}
+			for (int j=0;j<n;++j){
+				//std::cout<<"TMP ======"<<tmpp<<std::endl;
+				a[j*n+i]/=tmpp;
+				inv[i*n+j]/=tmpp;				
+			}
+		}
+	}
+	synchronize(total_threads);
+	
+	//std::cout<<"HELLO\n";
+	//synchronize(total_threads);
+	
+	if (thread_num==0 ){
+			std::cout<<"AFTER : \n";
+				std::cout<<"matr a: \n"; print_matrix_spv(a,n,n,4);     
+				std::cout<<"matr inv: \n"; print_matrix_spv_row(inv,n,n,4);     
+	}
+	return 0;
 }
 
 
@@ -532,12 +476,18 @@ synchronize(total_threads);*/
 void* effective_method(void* pa){
     ARGS* pargs = (ARGS*)pa;
 
-    long int t;
-    int i;
-    printf ("Thread %d started\n", pargs->thread_num);
+
+    //t=pargs
+    //int i;
+    printf ("Info:   thread %d started\n", pargs->thread_num);
     synchronize(pargs -> total_threads);
+    double t=get_full_time();
     effective_method(pargs->matrix,pargs->inv,pargs -> n,pargs -> x_k, pargs -> thread_num, pargs-> total_threads);
+    
     synchronize(pargs -> total_threads);
+    
+    pargs->time = get_full_time()-t;
+    //std::cout<<"\nInfo from function: TIME = "<<pargs->time<<std::endl;
 
     return 0;
 }
