@@ -7,7 +7,6 @@ int main(int argc, char** argv) {
     int n=1;
 	int m=0;
 	int k=-1;
-	int w;
     int p;       //total_threads
 
 	
@@ -125,6 +124,7 @@ int main(int argc, char** argv) {
 
     ARGS* args; //array of arguments for created tasks
     pthread_t* threads; //array of created task identifiers
+    double* ArrayForNorm;
 
     if (!(args=(ARGS*)malloc(p*sizeof(ARGS)))){
         std::cout<<"\nInfo:   not enough memory"<<std::endl;
@@ -144,6 +144,16 @@ int main(int argc, char** argv) {
         free(args);
         return -2;
     }
+    if (!(ArrayForNorm=(double*)malloc(p*sizeof(double)))){
+        std::cout<<"\nInfo:   not enough memory"<<std::endl;
+        free(array_orig);
+        free(array);
+        free(array_inv);
+        free(x_k);
+        free(args);
+        free(threads);
+        return -2;
+    }
 
 
 
@@ -154,9 +164,11 @@ int main(int argc, char** argv) {
         args[i].n = n;
         args[i].thread_num = i;
         args[i].total_threads = p;
+        args[i].count=p;
+        args[i].flag_error=1;
     }
 
-    double time = get_full_time();
+    //double time = get_full_time();
 
 
     //p=total threads
@@ -171,6 +183,7 @@ int main(int argc, char** argv) {
             free(array);
             free(array_orig);
             free(array_inv);
+            free(ArrayForNorm);
             return - 3;
         }
     }
@@ -184,42 +197,37 @@ int main(int argc, char** argv) {
             free(array);
             free(array_orig);
             free(array_inv);
+            free(ArrayForNorm);
             return - 3;
         }
     }
     
-	time = get_full_time() - time;
-    
-    //effective_method(array,array_inv, n, x_k);
-    //effective_method( array_orig,array_inv, n,x_k,0,1);
-    
-
-
-
-
-//-----------------------------------
-
-	//clock_t start=clock();
-	//w=effective_method(array,array_inv,n,x_k);
-	//clock_t end=clock();
-
-    //double duration =(double)(end-start)/CLOCKS_PER_SEC;
-    
-	//print_matrix(array,m);
+	//time = get_full_time() - time;
 	
-	//print_matrix(array_inv,m);
-    //if (w==0){
-        gauss_back_run(array,array_inv,n);
-		std::cout<<"--------------------------Your inverse matrix------------------------\n"<<std::endl;
-        print_matrix_spv(array_inv,n,n, m);
-        //std::cout<<"~~~~~~~Duration~~~~~~: \n"<<duration<<std::endl;
-	    //std::cout<<"\nInfo:   norma = "<<norm(n,array_orig,array_inv)<<std::endl;
-
-        printf("%s : residual = %e elapsed = %.2f s = %d n = %d m = %d p = %d\n", argv[0], norm(n,array_orig,array_inv), time, k, n, m, p);
-        
+	double time=0.0;
+    bool err=true;
+	for (int i=0;i<p;++i){
+        if (args[i].flag_error==0) {std::cout<<"\nInfo:   an error occurred while working with the method\n"; err=0;}
+        if (args[i].time<time) time=args[i].time;
+    }
     
-    //}
-    //else std::cout<<"Info:   Matrix singular! (0..0)"<<std::endl;
+
+ 
+     //gauss_back_run(array,array_inv, n);
+    //std::cout<<"--------------------------Your  matrix   a   ------------------------\n"<<std::endl;
+    //print_matrix_spv(array,n,n, m);
+    double nor=norma(n,array_orig,array_inv);
+	if (err){
+        std::cout<<"--------------------------Your inverse matrix------------------------\n"<<std::endl;
+        print_matrix_spv_row(array_inv,n,n, m);
+        
+        double time2 = get_full_time();         
+       
+        time2 = get_full_time() - time2;
+        std::cout<<"\nInfo:   duration for norm = "<<time2<<std::endl;
+    }
+        
+    printf("\n %s : residual = %e elapsed = %.2f s = %d n = %d m = %d p = %d\n", argv[0], nor, time, k, n, m, p);
     
     free(threads);
     free(args);
@@ -227,6 +235,7 @@ int main(int argc, char** argv) {
 	free(array);
 	free(array_orig);
 	free(array_inv);
+    free(ArrayForNorm);
 	return 0;
 
 }
