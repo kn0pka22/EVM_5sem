@@ -6,10 +6,13 @@ typedef struct{
     double* matrix;
     double* x_k; 
     double* inv; 
-    int n; // размер матрицы и
-    int thread_num; // номер задачи 
-    int total_threads; // всеrо задач 
+    int n; // matrix size 
+    int thread_num; // thread number
+    int total_threads; 
     double time;
+    int count = 0;  //to count how many times the task was called
+    int flag_error=1;  // to detect errors
+    double* ArrayForNorm;
 } ARGS;
 
 void print_matrix(double* mas,int n);
@@ -32,7 +35,7 @@ int input_matr(int n,double* arr, int k,const char* fname);
 
 int gauss_back_run(double* a,double* inv, int n);
 
-int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, int total_threads);
+int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, int total_threads,int& flag);
 
 void synchronize(int total_threads);
 
@@ -43,4 +46,6 @@ void* effective_method(void* pa);
 double get_full_time();
 
 void print_matrix_spv_row(double* mas,int n,int m,int p);
-s
+
+void* residual(void* pa);
+
