@@ -2,7 +2,7 @@
 #include <chrono>
 #include <ctime>
 #include <sys/time.h>
-
+std::mutex mtx;
 
 double get_full_time(){
 	struct timeval buf;
@@ -404,7 +404,7 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
 			}
 		
 		}
-		synchronize(total_threads);	
+		//synchronize(total_threads);	
 		//std::cout<<"\nleave THREAD_NUM = "<<thread_num<<std::endl;
 	}
 	double tmpp=1;
@@ -451,8 +451,8 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
 //183
 void* effective_method(void* pa){
     ARGS* pargs = (ARGS*)pa;
-    std::cout<<"Info:   thread "<< pargs->thread_num<<"started\n";
-    synchronize(pargs -> total_threads);
+    //std::cout<<"Info:   thread "<< pargs->thread_num<<"started\n";
+   // synchronize(pargs -> total_threads);
     double t=get_full_time();
     effective_method(pargs->matrix,pargs->inv,pargs -> n,pargs -> x_k, pargs -> thread_num, pargs-> total_threads, pargs->flag_error);
     synchronize(pargs -> total_threads);
@@ -463,45 +463,43 @@ void* effective_method(void* pa){
     return 0;
 }
 
-void* residual(void* pa){
+void* residual(void *pa){
     ARGS* pargs = (ARGS*)pa;
-    synchronize(pargs -> total_threads);
-    double t=get_full_time();
-    
 	double ma = 0.0;
 	double str_sum = 0.0;
 	double sum=0.0;
-	int first_index, last_index,tmp;
-	tmp= pargs->n/pargs -> total_threads;
-    first_index=tmp;
-	
-     /*   
-    first_index=tmp*thread_num;
-    last_index=(thread_num >= total_threads - 1)?n:(tmp*thread_num+tmp);
-	if ((n%total_threads) && (thread_num==total_threads-1)) last_index=n;
+	pargs->nor = 0;
+    int p = pargs->total_threads;
+	double *a = pargs->matrix_orig;
+    double *inv = pargs->inv;
+    int n = pargs->n;
 
-	for (int i = 0; i < n; i++) {
-		str_sum = 0.0;
-		for (int j = 0; j < n; j++) {
-			sum = 0.0;
-			for (int k = first_index; k < last_index; k++) {
-				sum += (ar[k * n + j] * inv[k * n + i]);
-			}
-			if (i == j) { sum -= 1.0; }
-			
-			str_sum += fabs(sum);
-		}
-		//if (fabs(str_sum) > ma) ma = str_sum;
-	}
-	synchronize(total_threads);
-	return ma;
+    mtx.lock();            		//  will not allow 
+    (pargs->thread_num)++;		//  other threads 		
+    int k = pargs->thread_num;  //  to enter until         
+    mtx.unlock();               //  it is completed
 
-*/
-    synchronize(pargs -> total_threads);
     
-    pargs->time = get_full_time()-t;
-    //std::cout<<"\nInfo from function: TIME = "<<pargs->time<<std::endl;
-
+    for ( int i = k-1; i < n; i+=p){
+        str_sum = 0.0;
+        for (int j = 0; j < n; j++){
+            sum=0.0;
+            for (int y = 0; y < n; y++){
+                sum += (a[y * n + i] * inv[y * n + j]);
+            }
+            if (i == j) sum -= 1.0;
+            str_sum+=fabs(sum);
+        }
+        pargs->ArrayForNorm[i] = fabs(sum);
+    }
+    synchronize(p);
+    if (k == 1){
+        for (int i = 0; i < n; i++){
+            if (pargs->ArrayForNorm[i] > ma){
+                ma= pargs->ArrayForNorm[i];
+            }
+        }
+        pargs->nor = ma;
+    }
     return 0;
 }
-
