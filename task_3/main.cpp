@@ -166,6 +166,7 @@ int main(int argc, char** argv) {
         args[i].total_threads = p;
         args[i].count=p;
         args[i].flag_error=1;
+        args[i].matrix_orig=array_orig;
     }
 
     //double time = get_full_time();
@@ -208,21 +209,49 @@ int main(int argc, char** argv) {
     bool err=true;
 	for (int i=0;i<p;++i){
         if (args[i].flag_error==0) {std::cout<<"\nInfo:   an error occurred while working with the method\n"; err=0;}
-        if (args[i].time<time) time=args[i].time;
+        if (args[i].time>time) time=args[i].time;
     }
     
 
- 
+    for (int i = 0; i < p; ++i) {
+        if (pthread_create(threads + i, 0, residual, args + i)) {
+            std::cout <<"\nInfo:   the thread " << i << " has not been created" <<std::endl;
+            free(threads);
+            free(args);
+            free(x_k);
+            free(array);
+            free(array_orig);
+            free(array_inv);
+            free(ArrayForNorm);
+            return - 3;
+        }
+    }
+
+    for (int i = 0; i < p; ++i) {
+        if (pthread_join(threads[i], 0)) {
+            std::cout << "\nInfo:   the thread" << i << " has not been joined!" << std::endl;
+            free(threads);
+            free(args);
+            free(x_k);
+            free(array);
+            free(array_orig);
+            free(array_inv);
+            free(ArrayForNorm);
+            return - 3;
+        }
+    }
+    
      //gauss_back_run(array,array_inv, n);
     //std::cout<<"--------------------------Your  matrix   a   ------------------------\n"<<std::endl;
     //print_matrix_spv(array,n,n, m);
-    double nor=norma(n,array_orig,array_inv);
+    double nor=0;
 	if (err){
         std::cout<<"--------------------------Your inverse matrix------------------------\n"<<std::endl;
         print_matrix_spv_row(array_inv,n,n, m);
         
         double time2 = get_full_time();         
-       
+       // nor=norma(n,array_orig,array_inv);
+       nor=args->nor;
         time2 = get_full_time() - time2;
         std::cout<<"\nInfo:   duration for norm = "<<time2<<std::endl;
     }
