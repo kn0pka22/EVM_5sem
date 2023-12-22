@@ -389,23 +389,22 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
                 |___|___|___|___| (n)
         */
         
-        //<<thread_num<<": FIRST INDEX = "<<first_index<<" AND LAST_INDEX = "<<last_index<<std::endl;
 		//std::cout<<"\nTHREAD_NUM ======== "<<thread_num<<std::endl;
 		for (int j=first_index;j<last_index;j++){
-			
+			//std::cout<<": FIRST INDEX = "<<first_index<<" AND LAST_INDEX = "<<last_index<<" andj = "<<j<<std::endl;
 			sp=0.0;
 			sp2=0.0;
 			for (int k=i;k<n;++k){
 				sp+=x_k[k]*a[j*n+k];
 				sp2+=x_k[k]*inv[k*n+j];
 			}
-			synchronize(total_threads);
 			for (int k=i;k<n;++k){
 				a[j*n+k]-=(2*sp*x_k[k]);
 				inv[k*n+j]-=(2*sp2*x_k[k]);	
 			}
-			synchronize(total_threads);
-		}	
+		
+		}
+		synchronize(total_threads);	
 		//std::cout<<"\nleave THREAD_NUM = "<<thread_num<<std::endl;
 	}
 	double tmpp=1;
@@ -435,12 +434,12 @@ int effective_method(double* a,double* inv, int n,double* x_k,int thread_num, in
 		//		}  
 	
 	if (thread_num==0){
-	for (int i=0;i<n;++i){
-		if (std::abs(a[i*n+i])<eps) flag=0;
-		tmpp=a[i*n+i];
-		for (int j=0;j<n;++j){
-			//a[j*n+i]=a[j*n+i]/tmpp;
-			inv[i*n+j]=inv[i*n+j]/tmpp;
+		for (int i=0;i<n;++i){
+			if (std::abs(a[i*n+i])<eps) flag=0;
+			tmpp=a[i*n+i];
+			for (int j=0;j<n;++j){
+				//a[j*n+i]=a[j*n+i]/tmpp;
+				inv[i*n+j]=inv[i*n+j]/tmpp;
 			}
 		}
 	}
