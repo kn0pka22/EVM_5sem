@@ -1,9 +1,11 @@
 #include <iostream>
 #include <cmath>
 #include <ctime>  
+#include <mutex>
 
 typedef struct{
     double* matrix;
+    double* matrix_orig;
     double* x_k; 
     double* inv; 
     int n; // matrix size 
@@ -13,7 +15,10 @@ typedef struct{
     int count = 0;  //to count how many times the task was called
     int flag_error=1;  // to detect errors
     double* ArrayForNorm;
+    double nor;
 } ARGS;
+
+
 
 void print_matrix(double* mas,int n);
 
